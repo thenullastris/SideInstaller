@@ -14,6 +14,17 @@ export IPHONEOS_DEPLOYMENT_TARGET="${IPHONEOS_DEPLOYMENT_TARGET:-17.4}"
 # shellcheck disable=SC1090
 source "$HOME/.cargo/env" 2>/dev/null || true
 
+# PRIVACY: scrub the local build path out of the binary. Rust bakes absolute
+# source paths (panic/`file!()`/error `Location`, mostly from ~/.cargo deps) into
+# the staticlib as *string constants* — they survive stripping and get printed
+# in the app's log console (e.g. "/Users/<you>/.cargo/.../sideloader.rs:85").
+# `--remap-path-prefix` / `-ffile-prefix-map` rewrite $HOME -> /build at compile
+# time so no username/identity ends up in the shipped app. (Changing these flags
+# forces a full rebuild, which is intended — the old cache has the raw paths.)
+export RUSTFLAGS="${RUSTFLAGS:-} --remap-path-prefix=${HOME}=/build"
+export CFLAGS="${CFLAGS:-} -ffile-prefix-map=${HOME}=/build"
+export TARGET_CFLAGS="${TARGET_CFLAGS:-} -ffile-prefix-map=${HOME}=/build"
+
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT/rust-core"
 
