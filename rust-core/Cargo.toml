@@ -1,0 +1,90 @@
+[package]
+name = "sideinstaller_ffi"
+version = "0.1.0"
+edition = "2021"
+description = "C FFI shim over idevice/isideload for SideInstaller (pairing, connection, install, signing)"
+
+[lib]
+name = "sideinstaller_ffi"
+crate-type = ["staticlib"]
+
+[dependencies]
+# Pinned to the same revision StikPair/StikDebug build against, so both the
+# RPPairing host (StikPair) and the loopback RSD tunnel (StikDebug's
+# tunnel_create_rppairing) we replicate match known-good implementations.
+#
+# Feature set is front-loaded to the full pipeline so the heavy dep tree
+# compiles once:
+#   remote_pairing       RPPairing host + pair-verify + TLS-PSK tunnel
+#   tunnel_tcp_stack     in-process software TCP stack (the Adapter)
+#   rsd / tcp / xpc      RemoteServiceDiscovery handshake over the tunnel
+#   core_device_proxy    USB CoreDevice fallback tunnel
+#   installation_proxy   list/install apps
+#   installcoordination_proxy  newer-iOS install fallback
+#   afc / house_arrest   file transfer (/PublicStaging upload, container access)
+#   misagent             provisioning-profile install
+#   heartbeat            keep the lockdown session alive
+#   mobile_image_mounter DDI mount if a step needs it
+#   pair                 classic lockdown pairing (kept for completeness)
+idevice = { git = "https://github.com/jkcoxson/idevice.git", rev = "7bd551c16c6dd2e058740d85a2d9399a51a776e9", default-features = false, features = [
+  "aws-lc",
+  "remote_pairing",
+  "tunnel_tcp_stack",
+  "rsd",
+  "tcp",
+  "xpc",
+  "core_device_proxy",
+  "installation_proxy",
+  "installcoordination_proxy",
+  "afc",
+  "house_arrest",
+  "misagent",
+  "heartbeat",
+  "mobile_image_mounter",
+  "pair",
+  "usbmuxd",
+] }
+
+# idevice's OWN C-FFI crate (rlib target), pinned to the same rev. Cargo
+# unifies the single `idevice` instance, so depending on both is safe (no
+# duplicate symbols). We reuse its production-tested connection/install FFI
+# (tunnel_create_rppairing, installation_proxy_*, afc_*, rp_pairing_file_*,
+# rsd_*, lockdown_*, adapter_*) — the same surface StikDebug ships — instead of
+# re-implementing the threading-sensitive RSD tunnel by hand. Its `#[no_mangle]`
+# symbols are re-exported into our staticlib (see `extern crate` in lib.rs).
+# We do NOT enable its mdns-based remote_pairing host; our forked pairing.rs
+# advertises via Swift NetService to avoid the multicast entitlement.
+# idevice-ffi, vendored under vendor/idevice-ffi with ONE change: crate-type is
+# rlib-only (upstream is staticlib+cdylib+rlib; rustc emits all in one pass and
+# the standalone cdylib link fails on the iOS *device* target). Its `idevice`
+# dep points at the same git rev as our direct dep above, so cargo unifies the
+# single idevice instance — no duplicate symbols. `full` features match the
+# config StikDebug ships, avoiding per-module feature-gate breakage.
+idevice-ffi = { path = "vendor/idevice-ffi", default-features = false, features = [
+  "full",
+  "aws-lc",
+] }
+
+# Apple ID auth + dev cert/App ID/profile + on-device IPA signing.
+# isideload references `idevice` unconditionally (its `install` feature-gate is
+# incomplete), so `install` must be enabled — that pulls idevice 0.1.61 from
+# crates.io. It coexists with our git idevice 0.1.63 as a *separate* version
+# (different symbols, no link collision). We only ever call the sign-only path
+# (`Sideloader::sign_app`, which takes no provider and never touches idevice);
+# isideload's install code is compiled-but-unused. We do the real install
+# ourselves via idevice-ffi over RSD (step 4). `fs-storage` avoids keyring.
+isideload = { git = "https://github.com/nab138/isideload.git", package = "isideload", default-features = false, features = [
+  "install",
+  "fs-storage",
+] }
+
+tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "fs"] }
+
+# Logging spine: forward idevice's `tracing` events (and any `log` records via
+# the tracing-log compat layer, enabled by default) through the FFI callback.
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
