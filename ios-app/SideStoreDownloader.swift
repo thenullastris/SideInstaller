@@ -1,9 +1,11 @@
 import Foundation
 
-/// What to install. Both are SideStore builds — the only difference is which
+/// What to install. Both are SideStore builds — the difference is which
 /// GitHub release the IPA is fetched from (LiveContainer + SideStore is
-/// SideStore with LiveContainer integrated). The rest of the pipeline (sign,
-/// install, write pairing) is identical.
+/// SideStore with LiveContainer integrated). SideStore pulls its latest stable
+/// release; LiveContainer pulls its rolling `nightly` pre-release, which is
+/// where the freshest LiveContainer + SideStore IPA is published. The rest of
+/// the pipeline (sign, install, write pairing) is identical.
 enum InstallSource: String, CaseIterable, Identifiable {
     case sideStore
     case liveContainer
@@ -26,11 +28,23 @@ enum InstallSource: String, CaseIterable, Identifiable {
         }
     }
 
-    /// GitHub "owner/repo" whose latest release holds the IPA.
+    /// GitHub "owner/repo" whose release holds the IPA.
     var repo: String {
         switch self {
         case .sideStore:     return "SideStore/SideStore"
         case .liveContainer: return "LiveContainer/LiveContainer"
+        }
+    }
+
+    /// GitHub releases API endpoint to read the IPA from. SideStore uses the
+    /// latest stable release; LiveContainer uses its rolling `nightly`
+    /// pre-release (the `/releases/latest` endpoint skips pre-releases, so we
+    /// fetch the `nightly` tag directly).
+    var releaseAPI: URL {
+        let base = "https://api.github.com/repos/\(repo)/releases"
+        switch self {
+        case .sideStore:     return URL(string: "\(base)/latest")!
+        case .liveContainer: return URL(string: "\(base)/tags/nightly")!
         }
     }
 
@@ -83,8 +97,7 @@ enum SideStoreDownloader {
     /// Returns the local path of the downloaded IPA. `log` receives progress.
     static func downloadLatest(source: InstallSource,
                                log: @escaping (String) -> Void) async throws -> String {
-        let api = URL(string: "https://api.github.com/repos/\(source.repo)/releases/latest")!
-        var req = URLRequest(url: api)
+        var req = URLRequest(url: source.releaseAPI)
         req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         req.setValue("SideInstaller", forHTTPHeaderField: "User-Agent")
 
