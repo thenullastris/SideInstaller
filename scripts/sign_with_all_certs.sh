@@ -33,6 +33,8 @@ FORCED_BUNDLE_ID="${FORCED_BUNDLE_ID:-}"
 TMP_DIR="$(mktemp -d)"
 CERT_ARCHIVE="$TMP_DIR/certificates.zip"
 UNSIGNED_IPA="$TMP_DIR/unsigned.ipa"
+APPLE_CERTS_DIR="$TMP_DIR/apple-certs"
+INTERMEDIATES_KC="$TMP_DIR/intermediates.keychain-db"
 
 ORIGINAL_KEYCHAINS=()
 OPENSSL_LEGACY_FLAG=""
@@ -42,6 +44,7 @@ warn() { echo "[WARN] $1"; }
 fail() { echo "[FAIL] $1"; }
 
 cleanup() {
+  security delete-keychain "$INTERMEDIATES_KC" >/dev/null 2>&1 || true
   restore_keychains
   rm -rf "$TMP_DIR"
 }
@@ -93,7 +96,9 @@ clean_generated_artifacts() {
   shopt -s nullglob
   matches=("$OUTPUT_DIR"/$pattern)
   shopt -u nullglob
-  [[ ${#matches[@]} -gt 0 ]] && rm -f "${matches[@]}"
+  if [[ ${#matches[@]} -gt 0 ]]; then
+    rm -f "${matches[@]}"
+  fi
 }
 
 resolve_cert_zip_url() {
@@ -244,20 +249,55 @@ sign_embedded_code() {
   fi
 }
 
+# Apple's WWDR intermediates + root. Without these in the signing keychain,
+# codesign can't build the chain and fails with errSecInternalComponent /
+# "0 valid identities found". Best-effort: CI runners often already have them.
+download_apple_intermediates() {
+  mkdir -p "$APPLE_CERTS_DIR"
+  local ca="https://www.apple.com/certificateauthority"
+  local u
+  for u in \
+    "$ca/AppleWWDRCAG2.cer" "$ca/AppleWWDRCAG3.cer" "$ca/AppleWWDRCAG4.cer" \
+    "$ca/AppleWWDRCAG5.cer" "$ca/AppleWWDRCAG6.cer" \
+    "https://developer.apple.com/certificationauthority/AppleWWDRCA.cer" \
+    "https://www.apple.com/appleca/AppleIncRootCertificate.cer"; do
+    curl -fsSL "$u" -o "$APPLE_CERTS_DIR/$(basename "$u")" 2>/dev/null || true
+  done
+  return 0
+}
+
+# Import Apple intermediates ONCE into a dedicated keychain that stays in the
+# search list for the whole run. Importing them into each per-cert keychain
+# fails after the first cert — macOS dedups identical certs and silently no-ops,
+# so only the first leaf can build its chain.
+setup_intermediates_keychain() {
+  security create-keychain -p "$KC_PASSWORD" "$INTERMEDIATES_KC" >/dev/null 2>&1 || return 0
+  security set-keychain-settings -lut 7200 "$INTERMEDIATES_KC" >/dev/null 2>&1 || true
+  security unlock-keychain -p "$KC_PASSWORD" "$INTERMEDIATES_KC" >/dev/null 2>&1 || true
+  local c
+  shopt -s nullglob
+  for c in "$APPLE_CERTS_DIR"/*.cer; do
+    security import "$c" -k "$INTERMEDIATES_KC" -A >/dev/null 2>&1 || true
+  done
+  shopt -u nullglob
+  return 0
+}
+
 # ----- preflight ------------------------------------------------------------
 while IFS= read -r existing_keychain; do
-  existing_keychain="${existing_keychain//\"/}"
+  # `security list-keychains` prints each path indented and quoted:  "/path/x.keychain-db"
+  existing_keychain="$(printf '%s' "$existing_keychain" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//')"
   [[ -n "$existing_keychain" ]] || continue
   ORIGINAL_KEYCHAINS+=("$existing_keychain")
 done < <(security list-keychains -d user 2>/dev/null || true)
 
 OPENSSL_PKCS12_HELP="$(openssl pkcs12 -help 2>&1 || true)"
-[[ "$OPENSSL_PKCS12_HELP" == *"-legacy"* ]] && OPENSSL_LEGACY_FLAG="-legacy"
+if [[ "$OPENSSL_PKCS12_HELP" == *"-legacy"* ]]; then OPENSSL_LEGACY_FLAG="-legacy"; fi
 
 mkdir -p "$OUTPUT_DIR"
 clean_generated_artifacts "$OUTPUT_PREFIX-*.ipa"
 printf 'name\tcertificate_expires_at\tdays_left\n' > "$CERT_METADATA_FILE"
-[[ -n "$CERT_NAME_LIST_FILE" ]] && : > "$CERT_NAME_LIST_FILE"
+if [[ -n "$CERT_NAME_LIST_FILE" ]]; then : > "$CERT_NAME_LIST_FILE"; fi
 
 CERT_ZIP_URL="$(resolve_cert_zip_url)"
 if ! UNSIGNED_IPA_RESOLVED_URL="$(resolve_unsigned_ipa_url)"; then
@@ -283,6 +323,9 @@ if ! unzip -tq "$UNSIGNED_IPA" >/dev/null 2>&1; then
 fi
 
 record_app_info "$UNSIGNED_IPA" || warn "Could not read app info from the unsigned IPA"
+echo "[*] Fetching Apple WWDR intermediates"
+download_apple_intermediates
+setup_intermediates_keychain
 unzip -q "$CERT_ARCHIVE" -d "$TMP_DIR"
 
 SUCCESS=0
@@ -360,9 +403,9 @@ while IFS= read -r P12_FILE; do
   security set-keychain-settings -lut 7200 "$KEYCHAIN" >/dev/null 2>&1 || true
   security unlock-keychain -p "$KC_PASSWORD" "$KEYCHAIN" >/dev/null 2>&1
   if [[ ${#ORIGINAL_KEYCHAINS[@]} -gt 0 ]]; then
-    security list-keychains -d user -s "$KEYCHAIN" "${ORIGINAL_KEYCHAINS[@]}" >/dev/null 2>&1
+    security list-keychains -d user -s "$KEYCHAIN" "$INTERMEDIATES_KC" "${ORIGINAL_KEYCHAINS[@]}" >/dev/null 2>&1
   else
-    security list-keychains -d user -s "$KEYCHAIN" >/dev/null 2>&1
+    security list-keychains -d user -s "$KEYCHAIN" "$INTERMEDIATES_KC" >/dev/null 2>&1
   fi
 
   log "Importing certificate"
@@ -376,6 +419,12 @@ while IFS= read -r P12_FILE; do
 
   IDENTITY="$(security find-identity -p codesigning -v "$KEYCHAIN" | sed -n 's/.*"\([^"]*\)".*/\1/p')"
   IDENTITY="${IDENTITY%%$'\n'*}"
+  if [[ -z "$IDENTITY" ]]; then
+    # Fall back to all identities (chain may not validate locally, but the
+    # private key is present and that is all codesign needs).
+    IDENTITY="$(security find-identity -p codesigning "$KEYCHAIN" | sed -n 's/.*"\([^"]*\)".*/\1/p')"
+    IDENTITY="${IDENTITY%%$'\n'*}"
+  fi
   if [[ -z "$IDENTITY" ]]; then
     fail "No signing identity found"
     restore_keychains; security delete-keychain "$KEYCHAIN" >/dev/null 2>&1 || true
@@ -441,7 +490,7 @@ while IFS= read -r P12_FILE; do
 
   log "Signed IPA created: $OUTPUT_PREFIX-$OUTPUT_NAME.ipa"
   printf '%s\t%s\t%s\n' "$OUTPUT_NAME" "$CERT_EXPIRES_AT" "$CERT_DAYS_LEFT" >> "$CERT_METADATA_FILE"
-  [[ -n "$CERT_NAME_LIST_FILE" ]] && printf '%s\n' "$OUTPUT_NAME" >> "$CERT_NAME_LIST_FILE"
+  if [[ -n "$CERT_NAME_LIST_FILE" ]]; then printf '%s\n' "$OUTPUT_NAME" >> "$CERT_NAME_LIST_FILE"; fi
 
   restore_keychains
   security delete-keychain "$KEYCHAIN" >/dev/null 2>&1 || true
