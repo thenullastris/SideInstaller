@@ -15,6 +15,7 @@ struct ContentView: View {
             VStack(spacing: 16) {
                 header
                 credentials
+                sourcePicker
                 actionButton
                 if engine.isRunning || engine.overallProgress > 0 || engine.finished {
                     progressSection
@@ -65,6 +66,24 @@ struct ContentView: View {
         .padding(.top, 8)
     }
 
+    // MARK: What to install
+
+    private var sourcePicker: some View {
+        card {
+            VStack(alignment: .leading, spacing: 10) {
+                Label("What to install", systemImage: "shippingbox")
+                    .font(.headline)
+                Picker("Version", selection: $engine.installSource) {
+                    ForEach(InstallSource.allCases) { src in
+                        Text(src.shortName).tag(src)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+        }
+        .disabled(engine.isRunning)
+    }
+
     // MARK: Credentials
 
     private var credentials: some View {
@@ -96,7 +115,7 @@ struct ContentView: View {
                     Text("Cancel")
                 } else {
                     Image(systemName: engine.finished ? "arrow.clockwise" : "square.and.arrow.down")
-                    Text(engine.finished ? "Run again" : "Install SideStore")
+                    Text(engine.finished ? "Run again" : "Install \(engine.installSource.shortName)")
                 }
             }
             .font(.headline)
@@ -146,7 +165,7 @@ struct ContentView: View {
                     .font(.system(size: 44, weight: .bold, design: .rounded))
                     .tracking(8)
                     .frame(maxWidth: .infinity)
-                Text("Enter this code in the iOS pairing prompt.")
+                Text("Type this code into the prompt in Settings.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Button {

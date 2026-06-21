@@ -1,6 +1,62 @@
 import Foundation
 
-/// Downloads the latest SideStore release IPA from GitHub into Documents.
+/// What to install. Both are SideStore builds — the only difference is which
+/// GitHub release the IPA is fetched from (LiveContainer + SideStore is
+/// SideStore with LiveContainer integrated). The rest of the pipeline (sign,
+/// install, write pairing) is identical.
+enum InstallSource: String, CaseIterable, Identifiable {
+    case sideStore
+    case liveContainer
+
+    var id: String { rawValue }
+
+    /// Full name, used in logs.
+    var displayName: String {
+        switch self {
+        case .sideStore:     return "SideStore"
+        case .liveContainer: return "LiveContainer + SideStore"
+        }
+    }
+
+    /// Short label for the segmented picker / button.
+    var shortName: String {
+        switch self {
+        case .sideStore:     return "SideStore"
+        case .liveContainer: return "SS + LiveContainer"
+        }
+    }
+
+    /// GitHub "owner/repo" whose latest release holds the IPA.
+    var repo: String {
+        switch self {
+        case .sideStore:     return "SideStore/SideStore"
+        case .liveContainer: return "LiveContainer/LiveContainer"
+        }
+    }
+
+    /// Local filename for the downloaded IPA.
+    var fileName: String {
+        switch self {
+        case .sideStore:     return "SideStore.ipa"
+        case .liveContainer: return "LiveContainer+SideStore.ipa"
+        }
+    }
+
+    /// Pick the right `.ipa` asset out of a release's assets.
+    func selectAsset(from assets: [SideStoreDownloader.GHAsset]) -> SideStoreDownloader.GHAsset? {
+        switch self {
+        case .sideStore:
+            return assets.first { $0.name.hasSuffix(".ipa") }
+        case .liveContainer:
+            // Prefer the exact published bundle; fall back to any SideStore-
+            // flavored .ipa in case the asset is renamed in a future release.
+            return assets.first { $0.name == "LiveContainer+SideStore.ipa" }
+                ?? assets.first { $0.name.lowercased().contains("sidestore") && $0.name.hasSuffix(".ipa") }
+        }
+    }
+}
+
+/// Downloads the latest release IPA for the chosen `InstallSource` into Documents.
 enum SideStoreDownloader {
 
     struct GHAsset: Decodable {
@@ -14,29 +70,30 @@ enum SideStoreDownloader {
     }
 
     enum DownloadError: Error, CustomStringConvertible {
-        case noIPAAsset
+        case noIPAAsset(String)
         case badURL
         var description: String {
             switch self {
-            case .noIPAAsset: return "no .ipa asset in the latest SideStore release"
+            case let .noIPAAsset(source): return "couldn't find the IPA in the latest \(source) release"
             case .badURL: return "bad asset URL"
             }
         }
     }
 
     /// Returns the local path of the downloaded IPA. `log` receives progress.
-    static func downloadLatest(log: @escaping (String) -> Void) async throws -> String {
-        let api = URL(string: "https://api.github.com/repos/SideStore/SideStore/releases/latest")!
+    static func downloadLatest(source: InstallSource,
+                               log: @escaping (String) -> Void) async throws -> String {
+        let api = URL(string: "https://api.github.com/repos/\(source.repo)/releases/latest")!
         var req = URLRequest(url: api)
         req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         req.setValue("SideInstaller", forHTTPHeaderField: "User-Agent")
 
         let (data, _) = try await URLSession.shared.data(for: req)
         let release = try JSONDecoder().decode(GHRelease.self, from: data)
-        log("Latest SideStore release: \(release.tag_name) with \(release.assets.count) assets")
+        log("Latest \(source.displayName) release: \(release.tag_name) with \(release.assets.count) assets")
 
-        guard let asset = release.assets.first(where: { $0.name.hasSuffix(".ipa") }) else {
-            throw DownloadError.noIPAAsset
+        guard let asset = source.selectAsset(from: release.assets) else {
+            throw DownloadError.noIPAAsset(source.displayName)
         }
         guard let assetURL = URL(string: asset.browser_download_url) else {
             throw DownloadError.badURL
@@ -49,7 +106,7 @@ enum SideStoreDownloader {
         }
 
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let dest = docs.appendingPathComponent("SideStore.ipa")
+        let dest = docs.appendingPathComponent(source.fileName)
         try? FileManager.default.removeItem(at: dest)
         try FileManager.default.moveItem(at: tmp, to: dest)
         return dest.path

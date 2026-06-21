@@ -85,6 +85,8 @@ final class Engine: ObservableObject {
     @Published var anisetteURL: String = "https://ani.sidestore.io"
     // LocalDevVPN's default device (target) IP; configurable in Advanced.
     @Published var deviceIP: String = "10.7.0.1"
+    // Which build to install (plain SideStore vs LiveContainer + SideStore).
+    @Published var installSource: InstallSource = .sideStore
 
     // MARK: Plain-text status readouts
 
@@ -145,6 +147,9 @@ final class Engine: ObservableObject {
     private let signQueue = DispatchQueue(label: "sideinstaller.sign")
     private var signSession: OpaquePointer?          // SignSession*
     @Published var downloadedIPAPath: String?
+    // Which source the current download corresponds to (so switching the
+    // selection forces a re-download rather than reusing the other build).
+    private var downloadedSource: InstallSource?
     @Published var signedAppPath: String?
 
     // 2FA bridge: the FFI 2FA callback (on a Rust worker thread) blocks on this
@@ -438,16 +443,18 @@ final class Engine: ObservableObject {
 
     @MainActor
     private func download() async throws {
-        if let p = downloadedIPAPath, FileManager.default.fileExists(atPath: p) {
-            log("SideStore IPA already downloaded — skipping.")
+        let src = installSource
+        if let p = downloadedIPAPath, downloadedSource == src, FileManager.default.fileExists(atPath: p) {
+            log("\(src.displayName) IPA already downloaded — skipping.")
             setStep(.download, .done)
             return
         }
         setStep(.download, .active)
-        log("Fetching latest SideStore release…")
-        let path = try await SideStoreDownloader.downloadLatest { line in self.log(line) }
+        log("Fetching latest \(src.displayName) release…")
+        let path = try await SideStoreDownloader.downloadLatest(source: src) { line in self.log(line) }
         downloadedIPAPath = path
-        log("SideStore IPA ready at \(path)")
+        downloadedSource = src
+        log("\(src.displayName) IPA ready at \(path)")
         setStep(.download, .done)
     }
 
@@ -771,12 +778,13 @@ enum Guides {
         actionURLString: "https://apps.apple.com/app/id6755608044")
 
     static let pairing = Guide(
-        title: "Approve the pairing request",
+        title: "Pair this iPhone in Settings",
         systemImage: "lock.iphone",
         steps: [
-            "In a moment iOS shows a pairing request — when it asks for a code, enter the PIN shown below.",
-            "If nothing appears, open Settings › Privacy & Security › Developer Mode and tap Pair.",
-            "Keep this app open while you do it.",
+            "Open the Settings app, then go to Privacy & Security › Developer Mode.",
+            "Tap “Pair with SideInstaller”.",
+            "Enter your iPhone’s passcode if it asks for it.",
+            "Come back to SideInstaller, read the code it shows you, then type that same code into the prompt in Settings.",
         ],
         actionLabel: nil, actionURLString: nil)
 
