@@ -1,8 +1,12 @@
-name: sign-sideinstaller
+name: plist-and-index
 
-# Re-signs the SideInstaller IPA with every certificate in the cert pool and
-# publishes a tap-to-install page. The IPA source is whatever URL you put in
-# ipa-url.txt (editable any time) — or a one-off override passed below.
+# Regenerates the OTA manifests (.plist) and the install page from the signed
+# IPAs ALREADY committed in the output folder — it does NOT re-sign anything.
+# Handy after you hand-edit the output folder or just want to rebuild the page.
+# Byte-identical duplicate IPAs are pruned first so a build can't show up twice.
+#
+# Cert validity shown on the page comes from the committed certificate-validity.tsv
+# (recorded at the last signing run); this workflow does not refresh expiry dates.
 
 on:
   workflow_dispatch:
@@ -15,20 +19,8 @@ on:
         options:
           - stable
           - beta
-      ipa_url:
-        description: "Override unsigned IPA URL (leave blank to use ipa-url.txt)"
-        required: false
-        default: ""
-      cert_zip_url:
-        description: "Override certificate pool zip URL (leave blank to use cert-url.txt)"
-        required: false
-        default: ""
-  push:
-    paths:
-      - "ipa-url.txt"          # re-run automatically when you point at a new IPA
-  schedule:
-    - cron: "0 23 * * *"       # daily refresh so the page tracks cert expiry
 
+# Share the signing workflow's lock so the two never push over each other.
 concurrency:
   group: sign-sideinstaller
   cancel-in-progress: false
@@ -39,7 +31,7 @@ permissions:
   id-token: write   # required by actions/deploy-pages
 
 jobs:
-  sign:
+  build:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
@@ -48,12 +40,9 @@ jobs:
           fetch-depth: 0
 
       - name: Make scripts executable
-        run: chmod +x scripts/sign_with_all_certs.sh scripts/generate_plist.sh scripts/generate_index.sh
+        run: chmod +x scripts/generate_plist.sh scripts/generate_index.sh
 
-      # Resolve the channel once and export the paths every later step + script
-      # reads from env. Beta gets its own output dir and page so a test build is
-      # never mixed into the public index.html / output/ artifacts. Automatic
-      # triggers (push, schedule) have no channel input and fall back to stable.
+      # Same resolver the signing workflow uses, so both target the same paths.
       - name: Resolve release channel
         shell: bash
         env:
@@ -77,25 +66,57 @@ jobs:
           } >> "$GITHUB_ENV"
           echo "Resolved channel: $channel"
 
-      - name: Sign IPA with all certificates
-        env:
-          # Dispatch overrides win; otherwise the scripts fall back to the
-          # ipa-url.txt / cert-url.txt files in the repo.
-          UNSIGNED_IPA_URL: ${{ github.event.inputs.ipa_url }}
-          CERT_ZIP_URL: ${{ github.event.inputs.cert_zip_url }}
-        run: ./scripts/sign_with_all_certs.sh
-
-      - name: Ensure signed IPAs exist
+      - name: Deduplicate IPAs
         shell: bash
         run: |
+          set -euo pipefail
+          prefix="${OUTPUT_PREFIX:-sideinstaller}"
           shopt -s nullglob
-          signed=("${OUTPUT_DIR}"/"${OUTPUT_PREFIX:-sideinstaller}"-*.ipa)
+          ipas=("${OUTPUT_DIR}"/"${prefix}"-*.ipa)
           shopt -u nullglob
-          if [[ ${#signed[@]} -eq 0 ]]; then
-            echo "No signed IPAs were produced in ${OUTPUT_DIR}/." >&2
+
+          if [[ ${#ipas[@]} -eq 0 ]]; then
+            echo "No ${prefix}-*.ipa files in ${OUTPUT_DIR}/ — nothing to dedupe."
+            exit 0
+          fi
+
+          # Keep one copy of each byte-identical IPA and delete the rest, so a
+          # duplicated build never becomes two install cards. The keeper is the
+          # shortest filename (tie-broken lexicographically) so a clean
+          # "sideinstaller-Foo.ipa" wins over a "sideinstaller-Foo-copy.ipa".
+          # Prefix each line with the path length, group by hash, order by
+          # (length, path), then any path after the first in its hash group is a
+          # duplicate.
+          dupes="$(shasum -a 256 "${ipas[@]}" \
+            | awk '{ print length($2), $0 }' \
+            | LC_ALL=C sort -k2,2 -k1,1n -k3 \
+            | awk '{ if ($2 == prev) print $3; prev = $2 }')"
+
+          if [[ -z "$dupes" ]]; then
+            echo "No duplicate IPAs found."
+            exit 0
+          fi
+
+          while IFS= read -r f; do
+            [[ -n "$f" ]] || continue
+            echo "Removing duplicate IPA: $f"
+            rm -f "$f"
+          done <<< "$dupes"
+
+      - name: Ensure IPAs exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          prefix="${OUTPUT_PREFIX:-sideinstaller}"
+          shopt -s nullglob
+          ipas=("${OUTPUT_DIR}"/"${prefix}"-*.ipa)
+          shopt -u nullglob
+          if [[ ${#ipas[@]} -eq 0 ]]; then
+            echo "No ${prefix}-*.ipa files in ${OUTPUT_DIR}/ — nothing to generate." >&2
             exit 1
           fi
-          printf '%s\n' "${signed[@]}"
+          printf 'Found %d IPA(s):\n' "${#ipas[@]}"
+          printf '%s\n' "${ipas[@]}"
 
       - name: Generate OTA manifests
         run: ./scripts/generate_plist.sh
@@ -114,7 +135,7 @@ jobs:
             exit 0
           fi
 
-          git commit -m "sign-sideinstaller ($CHANNEL): refresh signed IPAs, manifests, and install page"
+          git commit -m "plist-and-index ($CHANNEL): rebuild manifests and install page from existing IPAs"
 
           for attempt in 1 2 3; do
             git pull --rebase origin "${GITHUB_REF_NAME}" || true
@@ -130,10 +151,9 @@ jobs:
         run: |
           rm -rf _site
           mkdir -p _site
-          # Publish whichever channel pages exist so a beta deploy never drops the
-          # public index.html (and vice versa). Install links inside each page point
-          # at committed raw-githubusercontent manifests, so the pages work
-          # standalone; Pages just needs the HTML itself.
+          # Publish whichever channel pages exist so this deploy never drops the
+          # other channel's page. Install links inside each page point at committed
+          # raw-githubusercontent manifests, so the pages work standalone.
           if [[ -f index.html ]]; then cp index.html _site/index.html; fi
           if [[ -f beta.html ]]; then cp beta.html _site/beta.html; fi
 
@@ -142,10 +162,9 @@ jobs:
         with:
           path: _site
 
-  # Publishes the install page. Requires Settings -> Pages -> Source = "GitHub Actions"
-  # (one-time). This job is what shows up in the Actions tab as the Pages deploy.
+  # Publishes the install page. Requires Settings -> Pages -> Source = "GitHub Actions".
   deploy-pages:
-    needs: sign
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
