@@ -31,4 +31,4 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist' # 👈 Changed from .output to standard Vite dist folder
+          path: '.output/public' # 👈 Changed from .output to standard Vite dist folder
