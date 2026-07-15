@@ -1,10 +1,15 @@
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { defineConfig } from "vite";
+import { tanstackStartVite } from "@tanstack/start-vite";
+import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-  tanstackStart: {
-    server: { entry: "server" },
-  },
-  vite: {
-    base: "/SideHelper/", // Important: Match your repo name exactly
-  }
+  plugins: [
+    tanstackStartVite({
+      deployment: {
+        target: "static", // 👈 This overrides the default server configuration
+      },
+    }),
+    tsconfigPaths(),
+  ],
+  base: "/SideHelper/", // 👈 Maps assets safely for your subfolder path
 });
