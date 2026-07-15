@@ -15,19 +15,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install Node.js
-        uses: actions/setup-node@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: 20
-          cache: 'npm'
+          bun-version: latest
+
+  # Bun handles caching internally and is much faster than npm
       - name: Install dependencies
-        run: npm install
-      - name: Build
-        run: npm run build
+        run: bun install
+
+      - name: Build Static Site
+        run: bun run build
+
       - name: Upload Artifacts
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.output/public' # This is where TanStack Start puts the static files
+          path: './output/public' # Double check if it creates .output/public or output/public
 
   deploy:
     needs: build_site
