@@ -13,14 +13,14 @@ enum Step: Int, CaseIterable, Identifiable {
     /// rather than always saying "SideStore".
     func title(for source: InstallSource) -> String {
         switch self {
-        case .network:      return "Connect the VPN"
-        case .pair:         return "Pair with this iPhone"
-        case .connect:      return "Open the device link"
-        case .signIn:       return "Sign in to Apple ID"
-        case .download:     return "Download \(source.shortName)"
-        case .sign:         return "Sign the app"
-        case .install:      return "Install \(source.shortName)"
-        case .writePairing: return "Finish setup"
+        case .network:      return "ភ្ជាប់ VPN"
+        case .pair:         return "ភ្ជាប់ជាមួយ iPhone នេះ"
+        case .connect:      return "បើកតំណភ្ជាប់ឧបករណ៍"
+        case .signIn:       return "ចូល Apple ID"
+        case .download:     return "ទាញយក \(source.shortName)"
+        case .sign:         return "ចុះហត្ថលេខាលើកម្មវិធី"
+        case .install:      return "ដំឡើង \(source.shortName)"
+        case .writePairing: return "បញ្ចប់ការដំឡើង"
         }
     }
 }
@@ -1140,46 +1140,46 @@ final class Engine: ObservableObject {
 
 enum Guides {
     static let wifi = Guide(
-        title: "Connect to Wi-Fi",
+        title: "ភ្ជាប់ Wi-Fi",
         systemImage: "wifi",
         steps: [
-            "Open Settings › Wi-Fi and join a network.",
-            "LocalDevVPN's tunnel — and the whole install — run over Wi-Fi.",
-            "Then come back here — this continues automatically.",
+            "បើក Settings › Wi-Fi ហើយចូលបណ្តាញមួយ។",
+            "តូណែលរបស់ LocalDevVPN — និងការដំឡើងទាំងមូល — ដំណើរការនៅលើ Wi-Fi។",
+            "បន្ទាប់មកត្រឡប់មកទីនេះវិញ — វានឹងបន្តដោយស្វ័យប្រវត្តិ។",
         ],
         actionLabel: nil, actionURLString: nil)
 
     static let vpn = Guide(
-        title: "Turn on LocalDevVPN",
+        title: "បើក LocalDevVPN",
         systemImage: "network",
         steps: [
-            "Open the LocalDevVPN app (install it first if you haven't).",
-            "Tap Connect so the toggle turns on.",
-            "Keep Wi-Fi on, then come back here — this continues automatically.",
+            "បើកកម្មវិធី LocalDevVPN (ដំឡើងវាសិន ប្រសិនបើអ្នកមិនទាន់មាន)។",
+            "ចុច Connect ដើម្បីបើកកុងតាក់។",
+            "ទុក Wi-Fi ឲ្យបើក ហើយត្រឡប់មកទីនេះវិញ — វានឹងបន្តដោយស្វ័យប្រវត្តិ។",
         ],
-        actionLabel: "Get LocalDevVPN",
+        actionLabel: "ទាញយក LocalDevVPN",
         actionURLString: "https://apps.apple.com/app/id6755608044")
 
     static let pairing = Guide(
-        title: "Pair this iPhone in Settings",
+        title: "ភ្ជាប់ iPhone នេះនៅក្នុង Settings",
         systemImage: "lock.iphone",
         steps: [
-            "Open the Settings app, then go to Privacy & Security › Developer Mode.",
-            "Tap “Pair with SideInstaller”.",
-            "Enter your iPhone’s passcode if it asks for it.",
-            "Come back to SideInstaller, read the code it shows you, then type that same code into the prompt in Settings.",
+            "បើកកម្មវិធី Settings រួចទៅកាន់ Privacy & Security › Developer Mode។",
+            "ចុច “ភ្ជាប់ជាមួយ SideInstaller” (Pair with SideInstaller)។",
+            "បញ្ចូលលេខសម្ងាត់ iPhone របស់អ្នក ប្រសិនបើវាសួរ។",
+            "ត្រឡប់មកកម្មវិធី SideInstaller វិញ អានកូដដែលវាបង្ហាញ រួចវាយកូដដដែលនោះចូលក្នុងប្រអប់សួរនៅក្នុង Settings។",
         ],
         actionLabel: nil, actionURLString: nil)
 
     static let certLimit = Guide(
-        title: "Too many signing certificates",
+        title: "វិញ្ញាបនបត្រចុះហត្ថលេខាច្រើនពេក",
         systemImage: "exclamationmark.shield",
         steps: [
-            "Apple allows only 3 signing certificates per Apple ID, and this one already has 3 — usually left over from setting up AltStore / SideStore on other devices.",
-            "Open the Certificates tab at the bottom of the screen, make sure your Apple ID is filled in, and tap “Load certificates”.",
-            "Tap “Revoke” on an old or expired certificate to free up a slot. Revoking stops apps already signed with that certificate from launching on other devices, so pick one you no longer use.",
-            "Come back to the Install tab and tap Install again.",
-            "Alternatively, sign in with a different (or spare) Apple ID above, then tap Install again.",
+            "Apple អនុញ្ញាតតែវិញ្ញាបនបត្រចុះហត្ថលេខា ៣ប៉ុណ្ណោះក្នុងមួយ Apple ID ហើយគណនីនេះមានគ្រប់ ៣ រួចហើយ — ជាធម្មតាមកពីការដំឡើង AltStore / SideStore លើឧបករណ៍ផ្សេងទៀត។",
+            "បើកផ្ទាំង Certificates នៅផ្នែកខាងក្រោមអេក្រង់ សូមប្រាកដថា Apple ID របស់អ្នកបានបំពេញរួច រួចចុច “ផ្ទុកវិញ្ញាបនបត្រ”។",
+            "ចុច “ដកហូត” លើវិញ្ញាបនបត្រចាស់ ឬផុតកំណត់ ដើម្បីដោះលែងកន្លែងទំនេរ។ ការដកហូតធ្វើឲ្យកម្មវិធីដែលបានចុះហត្ថលេខាដោយវិញ្ញាបនបត្រនោះឈប់ដំណើរការនៅលើឧបករណ៍ផ្សេងទៀត ដូច្នេះជ្រើសរើសមួយដែលអ្នកលែងប្រើ។",
+            "ត្រឡប់ទៅផ្ទាំង Install រួចចុច Install ម្តងទៀត។",
+            "ជាជម្រើសផ្សេង សូមចូលដោយ Apple ID ផ្សេង (ឬដែលនៅសល់) នៅខាងលើ រួចចុច Install ម្តងទៀត។",
         ],
         actionLabel: nil, actionURLString: nil)
 
@@ -1191,32 +1191,32 @@ enum Guides {
     static func deviceRegistration(udid: String, raw: String) -> Guide {
         var steps: [String] = []
         if Engine.isDeviceLimitError(raw) {
-            steps.append("Your Apple ID has hit its limit of registered devices. Free accounts can only register a handful of devices per year and can't remove old ones until the year resets.")
-            steps.append("Easiest fix: put a different (or spare) Apple ID in the fields above, then tap Install again.")
+            steps.append("Apple ID របស់អ្នកបានដល់ដែនកំណត់នៃឧបករណ៍ដែលបានចុះឈ្មោះ។ គណនីឥតគិតថ្លៃអាចចុះឈ្មោះឧបករណ៍បានតែពីរបីគ្រឿងក្នុងមួយឆ្នាំ ហើយមិនអាចលុបចេញបានទេ រហូតដល់ឆ្នាំបានចាប់ផ្តើមឡើងវិញ។")
+            steps.append("វិធីងាយបំផុត៖ ដាក់ Apple ID ផ្សេង (ឬដែលនៅសល់) ចូលក្នុងប្រអប់ខាងលើ រួចចុច Install ម្តងទៀត។")
         } else {
-            steps.append("SideInstaller couldn't add this iPhone to your Apple ID's developer team automatically. Tapping Install again often works — Apple's developer service is sometimes briefly unavailable.")
+            steps.append("SideInstaller មិនអាចបញ្ចូល iPhone នេះទៅក្នុងក្រុមអភិវឌ្ឍន៍របស់ Apple ID អ្នកបានទេ។ ការចុច Install ម្តងទៀតជាញឹកញាប់ដំណើរការ — សេវាកម្មអភិវឌ្ឍន៍របស់ Apple ពេលខ្លះមិនដំណើរការមួយភ្លែត។")
         }
         if !udid.isEmpty {
-            steps.append("If it keeps failing, add the device by hand. Its UDID is:")
+            steps.append("ប្រសិនបើនៅតែបរាជ័យ សូមបន្ថែមឧបករណ៍ដោយដៃ។ UDID របស់វាគឺ៖")
             steps.append(udid)
-            steps.append("Paste that into the “Register a Device” form in the Apple Developer portal (this requires a paid Apple Developer account), then tap Install again.")
+            steps.append("បិទភ្ជាប់វាចូលក្នុងទម្រង់ “ចុះឈ្មោះឧបករណ៍” នៅក្នុង Apple Developer portal (ត្រូវការគណនី Apple Developer បង់ប្រាក់) រួចចុច Install ម្តងទៀត។")
         }
         return Guide(
-            title: "Couldn't register this device",
+            title: "មិនអាចចុះឈ្មោះឧបករណ៍នេះបានទេ",
             systemImage: "iphone.badge.exclamationmark",
             steps: steps,
-            actionLabel: udid.isEmpty ? nil : "Open device list",
+            actionLabel: udid.isEmpty ? nil : "បើកបញ្ជីឧបករណ៍",
             actionURLString: udid.isEmpty ? nil : "https://developer.apple.com/account/resources/devices/list")
     }
 
     static func trust(appName: String) -> Guide {
         Guide(
-            title: "Last step: trust \(appName)",
+            title: "ជំហានចុងក្រោយ៖ ទុកចិត្ត \(appName)",
             systemImage: "checkmark.seal",
             steps: [
-                "Open Settings › General › VPN & Device Management.",
-                "Tap your Apple ID under “Developer App”, then tap Trust.",
-                "Open \(appName) from your Home Screen — you're done.",
+                "បើក Settings › General › VPN & Device Management។",
+                "ចុច Apple ID របស់អ្នកនៅក្រោម “Developer App” រួចចុច Trust។",
+                "បើក \(appName) ពីអេក្រង់ដើមរបស់អ្នក — អ្នករួចរាល់ហើយ។",
             ],
             actionLabel: nil, actionURLString: nil)
     }
@@ -1224,12 +1224,12 @@ enum Guides {
     /// Shown only after a LiveContainer + SideStore install: LiveContainer needs
     /// SideStore's signing certificate, which you pull in from its settings.
     static let liveContainerImport = Guide(
-        title: "Import the certificate into LiveContainer",
+        title: "នាំចូលវិញ្ញាបនបត្រទៅ LiveContainer",
         systemImage: "arrow.down.doc",
         steps: [
-            "Open LiveContainer from your Home Screen.",
-            "Tap the Settings tab.",
-            "Tap “Import Certificate From SideStore”.",
+            "បើក LiveContainer ពីអេក្រង់ដើមរបស់អ្នក។",
+            "ចុចផ្ទាំង Settings។",
+            "ចុច “នាំចូលវិញ្ញាបនបត្រពី SideStore” (Import Certificate From SideStore)។",
         ],
         actionLabel: nil, actionURLString: nil)
 }

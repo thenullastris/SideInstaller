@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTPUT_PREFIX="${OUTPUT_PREFIX:-sideinstaller}"
 OUTPUT_DIR="${OUTPUT_DIR:-$ROOT_DIR/output}"
 APP_NAME="${APP_NAME:-SideInstaller}"
-APP_TAGLINE="${APP_TAGLINE:-On-device sideloader. Follow the three steps below to get set up.}"
+APP_TAGLINE="${APP_TAGLINE:-កម្មវិធីដំឡើងផ្ទាល់លើឧបករណ៍។ អនុវត្តតាមបីជំហានខាងក្រោមដើម្បីរៀបចំ។}"
 PAGE_TITLE="${PAGE_TITLE:-$APP_NAME — Install}"
 OUTPUT_HTML="${OUTPUT_HTML:-index.html}"
 TEMPLATE="${TEMPLATE:-$SCRIPT_DIR/template.html}"
@@ -80,11 +80,11 @@ pill_for() {  # days -> "class<TAB>label"
   local d="$1"
   if ! [[ "$d" =~ ^-?[0-9]+$ ]] || (( d <= -999999 )); then printf 'unknown\tUnknown'; return; fi
   if   (( d < 0  )); then printf 'bad\tExpired'
-  elif (( d == 0 )); then printf 'crit\tExpires today'
+  elif (( d == 0 )); then printf 'crit\tផុតកំណត់ថ្ងៃនេះ'
   elif (( d == 1 )); then printf 'crit\t1 day left'
-  elif (( d <= 7 )); then printf 'crit\t%s days left' "$d"
-  elif (( d <= 30 )); then printf 'warn\t%s days left' "$d"
-  else printf 'good\t%s days left' "$d"; fi
+  elif (( d <= 7 )); then printf 'crit\tនៅសល់ %s ថ្ងៃ' "$d"
+  elif (( d <= 30 )); then printf 'warn\tនៅសល់ %s ថ្ងៃ' "$d"
+  else printf 'good\tនៅសល់ %s ថ្ងៃ' "$d"; fi
 }
 
 INSTALL_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>'
@@ -105,7 +105,7 @@ if [[ ${#PLISTS[@]} -gt 0 ]]; then
     name_esc="$(printf '%s' "$name" | html_escape)"
     expires_line=""
     if [[ -n "$expires_at" && "$expires_at" != "unknown" ]]; then
-      expires_line="<p class=\"cert-meta\">Expires $(printf '%s' "$expires_at" | html_escape)</p>"
+      expires_line="<p class=\"cert-meta\">ផុតកំណត់ $(printf '%s' "$expires_at" | html_escape)</p>"
     fi
     install_url="itms-services://?action=download-manifest&amp;url=$OUTPUT_BASE_URL/$filename"
 
@@ -116,7 +116,7 @@ if [[ ${#PLISTS[@]} -gt 0 ]]; then
         <span class="pill $pill_class">$pill_label</span>
       </div>
       $expires_line
-      <a class="install-btn" href="$install_url">$INSTALL_ICON Install</a>
+      <a class="install-btn" href="$install_url">$INSTALL_ICON ដំឡើង</a>
     </article>
 EOF
     CERT_COUNT=$((CERT_COUNT + 1))
@@ -132,7 +132,7 @@ if [[ $CERT_COUNT -eq 0 ]]; then
   printf '    <p class="empty show">No signed builds available yet. Check back soon.</p>\n' > "$CARDS_FILE"
 fi
 
-REPO_NOTE="Built automatically &middot; signed with $CERT_COUNT certificate(s)"
+REPO_NOTE="បង្កើតដោយស្វ័យប្រវត្តិ &middot; ចុះហត្ថលេខាជាមួយវិញ្ញាបនបត្រ $CERT_COUNT"
 
 # --- assemble: stream template, swap single-line tokens, splice the cards block ---
 PAGE_TITLE_ESC="$(printf '%s' "$PAGE_TITLE" | html_escape)"

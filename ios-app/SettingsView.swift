@@ -15,7 +15,7 @@ struct SettingsView: View {
     /// The IPA the user swiped to delete, pending confirmation.
     @State private var pendingDelete: DownloadedIPA?
 
-    /// `true` once the user picks "Custom…", revealing the free-form URL field.
+    /// `true` once the user picks "កំណត់ដោយខ្លួនឯង…", revealing the free-form URL field.
     @State private var anisetteIsCustom = false
 
     var body: some View {
@@ -26,11 +26,11 @@ struct SettingsView: View {
                 advancedSection
                 logSection
             }
-            .navigationTitle("Settings")
+            .navigationTitle("ការកំណត់")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
+                    Button("រួចរាល់") { dismiss() }
                 }
             }
         }
@@ -38,14 +38,14 @@ struct SettingsView: View {
             anisetteIsCustom = !engine.anisetteServers.contains { $0.address == engine.anisetteURL }
             downloadsManager.refresh()
         }
-        .alert("Delete this download?",
+        .alert("លុបការទាញយកនេះឬ?",
                isPresented: Binding(get: { pendingDelete != nil },
                                     set: { if !$0 { pendingDelete = nil } })) {
-            Button("Delete", role: .destructive) {
+            Button("លុប", role: .destructive) {
                 if let item = pendingDelete { downloadsManager.delete(item) }
                 pendingDelete = nil
             }
-            Button("Cancel", role: .cancel) { pendingDelete = nil }
+            Button("បោះបង់", role: .cancel) { pendingDelete = nil }
         } message: {
             if let item = pendingDelete {
                 Text("“\(item.fileName)” (\(item.sizeText)) will be removed. You can download it again any time from the Install tab.")
@@ -66,7 +66,7 @@ struct SettingsView: View {
                     .foregroundStyle(.red)
             }
             if downloadsManager.hasLoaded && downloadsManager.downloads.isEmpty {
-                Text("No downloaded IPAs. Ones you install from the Install tab are cached here.")
+                Text("គ្មានឯកសារ IPA ដែលបានទាញយកទេ។ ឯកសារដែលអ្នកដំឡើងពីផ្ទាំង Install នឹងត្រូវផ្ទុកទុកនៅទីនេះ។")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {
@@ -81,7 +81,7 @@ struct SettingsView: View {
             }
         } header: {
             HStack {
-                Text("Downloaded IPAs")
+                Text("ឯកសារ IPA ដែលបានទាញយក")
                 Spacer()
                 if !downloadsManager.downloads.isEmpty {
                     Text("\(downloadsManager.totalSizeText) used")
@@ -89,7 +89,7 @@ struct SettingsView: View {
                 }
             }
         } footer: {
-            Text("IPAs are cached in the app's Documents so re-installs are instant. Swipe a row to delete it and free up space.")
+            Text("ឯកសារ IPA ត្រូវបានផ្ទុកទុកនៅក្នុង Documents របស់កម្មវិធី ដើម្បីឲ្យការដំឡើងឡើងវិញលឿន។ អូសជួរដេកដើម្បីលុប និងដោះលែងទំហំផ្ទុក។")
         }
     }
 
@@ -121,15 +121,15 @@ struct SettingsView: View {
 
     private var anisetteSection: some View {
         Section {
-            Picker("Server", selection: anisetteSelection) {
+            Picker("ម៉ាស៊ីនមេ", selection: anisetteSelection) {
                 ForEach(engine.anisetteServers) { server in
                     Text(server.name).tag(Optional(server.address))
                 }
                 Divider()
-                Text("Custom…").tag(String?.none)
+                Text("កំណត់ដោយខ្លួនឯង…").tag(String?.none)
             }
             if anisetteIsCustom {
-                TextField("Server URL", text: $engine.anisetteURL)
+                TextField("URL ម៉ាស៊ីនមេ", text: $engine.anisetteURL)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .keyboardType(.URL)
@@ -141,14 +141,14 @@ struct SettingsView: View {
                     .truncationMode(.middle)
             }
         } header: {
-            Text("Anisette Server")
+            Text("ម៉ាស៊ីនមេ Anisette")
         } footer: {
-            Text("Used to sign in to Apple. The app retries the others automatically if one is down.")
+            Text("ប្រើសម្រាប់ចូល Apple។ កម្មវិធីនឹងសាកល្បងម៉ាស៊ីនផ្សេងទៀតដោយស្វ័យប្រវត្តិ ប្រសិនបើមួយណាមិនដំណើរការ។")
         }
     }
 
     /// Drives the menu: a server's address when one is selected, `nil` for
-    /// "Custom…". Selecting a server also stores its address as the URL we use.
+    /// "កំណត់ដោយខ្លួនឯង…". Selecting a server also stores its address as the URL we use.
     private var anisetteSelection: Binding<String?> {
         Binding(
             get: { anisetteIsCustom ? nil : engine.anisetteURL },
@@ -168,7 +168,7 @@ struct SettingsView: View {
     private var advancedSection: some View {
         Section {
             HStack {
-                Text("Device IP")
+                Text("IP ឧបករណ៍")
                 Spacer()
                 TextField("10.7.0.1", text: $engine.deviceIP)
                     .textInputAutocapitalization(.never)
@@ -178,9 +178,9 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
         } header: {
-            Text("Advanced")
+            Text("កម្រិតខ្ពស់")
         } footer: {
-            Text("The LocalDevVPN tunnel target. Leave the default unless you've changed it.")
+            Text("គោលដៅតូណែល LocalDevVPN។ ទុកតម្លៃលំនាំដើម លុះត្រាតែអ្នកបានផ្លាស់ប្តូរវា។")
         }
     }
 
@@ -210,13 +210,13 @@ struct SettingsView: View {
                 Button {
                     UIPasteboard.general.string = engine.logText()
                 } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
+                    Label("ចម្លង", systemImage: "doc.on.doc")
                 }
                 Spacer()
                 Button(role: .destructive) {
                     engine.clearLog()
                 } label: {
-                    Label("Clear", systemImage: "trash")
+                    Label("សម្អាត", systemImage: "trash")
                 }
             }
             .font(.subheadline)

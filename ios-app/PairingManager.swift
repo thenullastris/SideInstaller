@@ -1,6 +1,6 @@
 import Foundation
 
-/// Drives the "Pairing" tab — the standalone equivalent of iLoader's "Manage
+/// Drives the "ការភ្ជាប់" tab — the standalone equivalent of iLoader's "Manage
 /// Pairing files". It can:
 ///   • generate (extract) the device pairing file via the RPPairing host,
 ///   • export it (share sheet / Save to Files), and
@@ -26,7 +26,7 @@ final class PairingManager: ObservableObject {
 
     // Results.
     @Published private(set) var targets: [InstalledPairingTarget] = []
-    /// True once a scan has completed (drives the "no apps found" empty state).
+    /// True once a scan has completed (drives the "រកមិនឃើញកម្មវិធីទេ" empty state).
     @Published private(set) var hasScanned = false
     @Published var lastError: String?
     @Published var lastSuccess: String?
@@ -68,7 +68,7 @@ final class PairingManager: ObservableObject {
                 engine.connection.disconnect()
                 targets = []
                 hasScanned = false
-                lastSuccess = "Pairing file ready. You can export it or install it into an app below."
+                lastSuccess = "ឯកសារភ្ជាប់រួចរាល់។ អ្នកអាចនាំចេញ ឬដំឡើងវាចូលក្នុងកម្មវិធីខាងក្រោម។"
             } catch is CancellationError {
                 // User backed out — no error banner.
             } catch {

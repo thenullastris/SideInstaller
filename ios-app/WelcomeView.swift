@@ -18,7 +18,7 @@ struct WelcomeView: View {
                         .font(.system(size: 40, weight: .bold))
                         .foregroundStyle(.white)
                         .welcomeItem(0)
-                    Text("an app by Frizzle")
+                    Text("កម្មវិធីមួយដោយ Frizzle")
                         .font(.headline.weight(.medium))
                         .foregroundStyle(.secondary)
                         .welcomeItem(1)
@@ -30,7 +30,7 @@ struct WelcomeView: View {
                 VStack(spacing: 20) {
                     checkboxRow
                         .welcomeItem(2)
-                    Button("Start") { hasAcceptedTOS = true }
+                    Button("ចាប់ផ្តើម") { hasAcceptedTOS = true }
                         .buttonStyle(PrimaryButtonStyle())
                         .disabled(!accepted)
                         .opacity(accepted ? 1 : 0.35)
@@ -45,7 +45,7 @@ struct WelcomeView: View {
     }
 
     /// The tickbox row. Tapping the box or the sentence toggles acceptance;
-    /// tapping "TOS" opens the terms page instead.
+    /// tapping "លក្ខខណ្ឌប្រើប្រាស់" opens the terms page instead.
     private var checkboxRow: some View {
         HStack(spacing: 4) {
             Button {
@@ -64,7 +64,7 @@ struct WelcomeView: View {
                             .scaleEffect(accepted ? 1 : 0.5)
                     }
                     .frame(width: 24, height: 24)
-                    Text("I have accepted the")
+                    Text("ខ្ញុំបានយល់ព្រមតាម")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.9))
                 }
@@ -73,7 +73,7 @@ struct WelcomeView: View {
             .accessibilityAddTraits(accepted ? [.isSelected] : [])
 
             Link(destination: URL(string: "https://frizzlem.github.io/SideInstaller/terms.html")!) {
-                Text("TOS")
+                Text("លក្ខខណ្ឌប្រើប្រាស់")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.accent2)
                     .underline()

@@ -2,13 +2,13 @@ import SwiftUI
 
 /// Certificate manager: list and revoke the iOS development certificates on the
 /// signed-in Apple ID. Apple caps a free account at 3 signing certificates, so
-/// revoking a stale one here frees a slot when "Install" hits that limit.
+/// revoking a stale one here frees a slot when "ដំឡើង" hits that limit.
 struct CertsView: View {
     @EnvironmentObject private var engine: Engine
     @ObservedObject var manager: CertManager
 
     @State private var showSettings = false
-    /// The certificate the user tapped "Revoke" on, pending confirmation.
+    /// The certificate the user tapped "ដកហូត" on, pending confirmation.
     @State private var pendingRevoke: DevCert?
 
     var body: some View {
@@ -34,14 +34,14 @@ struct CertsView: View {
             .toolbar { settingsToolbarItem(isPresented: $showSettings) }
             .sheet(isPresented: $showSettings) { SettingsView() }
         }
-        .alert("Revoke this certificate?",
+        .alert("ដកហូតវិញ្ញាបនបត្រនេះឬ?",
                isPresented: Binding(get: { pendingRevoke != nil },
                                     set: { if !$0 { pendingRevoke = nil } })) {
-            Button("Revoke", role: .destructive) {
+            Button("ដកហូត", role: .destructive) {
                 if let cert = pendingRevoke { manager.revoke(cert) }
                 pendingRevoke = nil
             }
-            Button("Cancel", role: .cancel) { pendingRevoke = nil }
+            Button("បោះបង់", role: .cancel) { pendingRevoke = nil }
         } message: {
             if let cert = pendingRevoke {
                 Text("“\(cert.displayName)” will be revoked. Apps already signed with it will stop launching on every device. This can't be undone.")
@@ -52,7 +52,7 @@ struct CertsView: View {
     // MARK: Header
 
     private var header: some View {
-        BrandHeader(icon: "checkmark.seal.fill", image: "CertsLogo", title: "Certificates") {
+        BrandHeader(icon: "checkmark.seal.fill", image: "CertsLogo", title: "វិញ្ញាបនបត្រ") {
             if let team = manager.teamSummary {
                 StatusPill(text: team, systemImage: "person.2.fill", color: .green)
                     .transition(.opacity.combined(with: .scale(scale: 0.85, anchor: .top)))
@@ -66,14 +66,14 @@ struct CertsView: View {
         PanelCard {
             VStack(alignment: .leading, spacing: 12) {
                 sectionTitle("Apple ID", systemImage: "person.crop.circle.fill")
-                TextField("Email", text: $engine.appleID)
+                TextField("អ៊ីមែល", text: $engine.appleID)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .keyboardType(.emailAddress)
                     .textContentType(.username)
                     .textFieldStyle(.plain)
                     .fieldBackground()
-                SecureField("Password", text: $engine.applePassword)
+                SecureField("ពាក្យសម្ងាត់", text: $engine.applePassword)
                     .textContentType(.password)
                     .textFieldStyle(.plain)
                     .fieldBackground()
@@ -91,11 +91,11 @@ struct CertsView: View {
             HStack(spacing: 10) {
                 if manager.isWorking {
                     ProgressView().tint(.white)
-                    Text(manager.isSignedIn ? "Refreshing" : "Signing in")
+                    Text(manager.isSignedIn ? "កំពុងធ្វើឲ្យស្រស់" : "កំពុងចូល")
                 } else {
                     Image(systemName: manager.hasLoaded ? "arrow.clockwise" : "list.bullet.rectangle.fill")
                         .contentTransition(.symbolEffect(.replace))
-                    Text(manager.hasLoaded ? "Refresh" : "Load certificates")
+                    Text(manager.hasLoaded ? "ធ្វើឲ្យស្រស់" : "ផ្ទុកវិញ្ញាបនបត្រ")
                 }
             }
         }
@@ -131,9 +131,9 @@ struct CertsView: View {
                 Image(systemName: "checkmark.seal")
                     .font(.largeTitle)
                     .foregroundStyle(Theme.brand)
-                Text("No certificates")
+                Text("គ្មានវិញ្ញាបនបត្រ")
                     .font(.headline)
-                Text("This Apple ID has no development certificates to revoke.")
+                Text("Apple ID នេះគ្មានវិញ្ញាបនបត្រអភិវឌ្ឍន៍សម្រាប់ដកហូតទេ។")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -162,7 +162,7 @@ struct CertsView: View {
                     }
                     Spacer()
                     if cert.isExpired {
-                        Text("Expired")
+                        Text("ផុតកំណត់")
                             .font(.caption2.weight(.bold))
                             .foregroundStyle(.orange)
                             .padding(.horizontal, 9)
@@ -193,10 +193,10 @@ struct CertsView: View {
                     HStack(spacing: 6) {
                         if revoking {
                             ProgressView().controlSize(.small)
-                            Text("Revoking")
+                            Text("កំពុងដកហូត")
                         } else {
                             Image(systemName: "trash")
-                            Text("Revoke")
+                            Text("ដកហូត")
                         }
                     }
                     .font(.subheadline.weight(.medium))
@@ -219,7 +219,7 @@ struct CertsView: View {
                     .font(.title2)
                     .foregroundStyle(.red)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Something went wrong")
+                    Text("មានអ្វីមួយខុសប្រក្រតី")
                         .font(.subheadline.weight(.semibold))
                     Text(message)
                         .font(.footnote)

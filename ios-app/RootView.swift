@@ -22,25 +22,25 @@ struct RootView: View {
 
     var body: some View {
         TabView {
-            Tab("Install", systemImage: "square.and.arrow.down") {
+            Tab("ដំឡើង", systemImage: "square.and.arrow.down") {
                 ContentView()
             }
-            Tab("Pairing", systemImage: "lock.iphone") {
+            Tab("ការភ្ជាប់", systemImage: "lock.iphone") {
                 PairingView(manager: pairingManager)
             }
-            Tab("Certificates", systemImage: "checkmark.seal") {
+            Tab("វិញ្ញាបនបត្រ", systemImage: "checkmark.seal") {
                 CertsView(manager: certManager)
             }
         }
         .tint(Theme.accent)
         .preferredColorScheme(.dark)
-        .alert("Two-Factor Code", isPresented: $engine.pendingTwoFactor) {
-            TextField("6-digit code", text: $twoFactorCode)
+        .alert("កូដផ្ទៀងផ្ទាត់ពីរជាន់", isPresented: $engine.pendingTwoFactor) {
+            TextField("កូដ ៦ខ្ទង់", text: $twoFactorCode)
                 .keyboardType(.numberPad)
-            Button("Submit") { engine.submitTwoFactor(twoFactorCode); twoFactorCode = "" }
-            Button("Cancel", role: .cancel) { engine.cancelTwoFactor(); twoFactorCode = "" }
+            Button("ដាក់ស្នើ") { engine.submitTwoFactor(twoFactorCode); twoFactorCode = "" }
+            Button("បោះបង់", role: .cancel) { engine.cancelTwoFactor(); twoFactorCode = "" }
         } message: {
-            Text("Enter the code Apple just sent to your trusted device.")
+            Text("បញ្ចូលកូដដែល Apple ទើបតែផ្ញើទៅឧបករណ៍ដែលអ្នកទុកចិត្ត។")
         }
     }
 }

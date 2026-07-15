@@ -105,9 +105,9 @@ struct ContentView: View {
         if let summary = engine.deviceSummary {
             StatusPill(text: summary, systemImage: "iphone", color: .green)
         } else if engine.vpnConnected {
-            StatusPill(text: "Tunnel connected", systemImage: "checkmark.shield.fill", color: .green)
+            StatusPill(text: "តូណែលបានភ្ជាប់", systemImage: "checkmark.shield.fill", color: .green)
         } else {
-            StatusPill(text: "Tunnel off", systemImage: "shield.slash.fill", color: .red)
+            StatusPill(text: "តូណែលបានបិទ", systemImage: "shield.slash.fill", color: .red)
         }
     }
 
@@ -116,7 +116,7 @@ struct ContentView: View {
     /// A quiet brand credit at the foot of the screen, tucked below the flow so it
     /// stays visible without crowding the header.
     private var footer: some View {
-        Text("an app by Frizzle")
+        Text("កម្មវិធីមួយដោយ Frizzle")
             .font(.caption)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity)
@@ -129,14 +129,14 @@ struct ContentView: View {
         PanelCard {
             VStack(alignment: .leading, spacing: 12) {
                 sectionTitle("Apple ID", systemImage: "person.crop.circle.fill")
-                TextField("Email", text: $engine.appleID)
+                TextField("អ៊ីមែល", text: $engine.appleID)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .keyboardType(.emailAddress)
                     .textContentType(.username)
                     .textFieldStyle(.plain)
                     .fieldBackground()
-                SecureField("Password", text: $engine.applePassword)
+                SecureField("ពាក្យសម្ងាត់", text: $engine.applePassword)
                     .textContentType(.password)
                     .textFieldStyle(.plain)
                     .fieldBackground()
@@ -158,7 +158,7 @@ struct ContentView: View {
                         .font(.title2)
                         .foregroundStyle(Theme.brand)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Update available")
+                        Text("មានកំណែថ្មី")
                             .font(.subheadline.weight(.semibold))
                         Text("SideInstaller \(updateChecker.latestVersion ?? "") is available — you're on \(updateChecker.currentVersion).")
                             .font(.footnote)
@@ -181,7 +181,7 @@ struct ContentView: View {
                     if let url = URL(string: UpdateChecker.installPageURL) { openURL(url) }
                 } label: {
                     HStack(spacing: 4) {
-                        Text("Get the latest version")
+                        Text("ទាញយកកំណែថ្មីបំផុត")
                         Image(systemName: "arrow.up.right")
                     }
                     .font(.footnote.weight(.semibold))
@@ -197,9 +197,9 @@ struct ContentView: View {
     private var appCard: some View {
         PanelCard {
             VStack(alignment: .leading, spacing: 12) {
-                sectionTitle("Install", systemImage: "square.and.arrow.down.fill")
+                sectionTitle("ដំឡើង", systemImage: "square.and.arrow.down.fill")
                 Menu {
-                    Picker("Install", selection: $engine.installSource) {
+                    Picker("ដំឡើង", selection: $engine.installSource) {
                         ForEach(InstallSource.allCases) { src in
                             Text(src.displayName).tag(src)
                         }
@@ -230,11 +230,11 @@ struct ContentView: View {
             HStack(spacing: 10) {
                 if engine.isRunning {
                     ProgressView().tint(.white)
-                    Text("Cancel")
+                    Text("បោះបង់")
                 } else {
                     Image(systemName: engine.finished ? "arrow.clockwise" : "square.and.arrow.down.fill")
                         .contentTransition(.symbolEffect(.replace))
-                    Text(engine.finished ? "Reinstall" : "Install \(engine.installSource.shortName)")
+                    Text(engine.finished ? "ដំឡើងឡើងវិញ" : "Install \(engine.installSource.shortName)")
                 }
             }
         }
@@ -260,9 +260,9 @@ struct ContentView: View {
                     .foregroundStyle(.red)
                     .symbolEffect(.pulse)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Wi-Fi required")
+                    Text("ត្រូវការ Wi-Fi")
                         .font(.subheadline.weight(.semibold))
-                    Text("Connect to a Wi-Fi network. LocalDevVPN's tunnel and the install run over it.")
+                    Text("ភ្ជាប់ទៅបណ្តាញ Wi-Fi។ តូណែលរបស់ LocalDevVPN និងការដំឡើងដំណើរការនៅលើវា។")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -283,9 +283,9 @@ struct ContentView: View {
                     .foregroundStyle(.red)
                     .symbolEffect(.pulse)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("LocalDevVPN required")
+                    Text("ត្រូវការ LocalDevVPN")
                         .font(.subheadline.weight(.semibold))
-                    Text("Open LocalDevVPN and tap Connect. The install runs over its tunnel.")
+                    Text("បើក LocalDevVPN ហើយចុច Connect។ ការដំឡើងដំណើរការតាមរយៈតូណែលរបស់វា។")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -310,7 +310,7 @@ struct ContentView: View {
         PanelCard {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
-                    Text(engine.finished ? "Installed" : "Installing")
+                    Text(engine.finished ? "បានដំឡើងរួច" : "កំពុងដំឡើង")
                         .font(.headline)
                         .contentTransition(.opacity)
                     Spacer()
@@ -355,19 +355,19 @@ struct ContentView: View {
     private func pinCallout(_ pin: String) -> some View {
         CalloutCard(tint: .orange) {
             VStack(spacing: 12) {
-                sectionTitle("Pairing code", systemImage: "lock.iphone")
+                sectionTitle("កូដភ្ជាប់", systemImage: "lock.iphone")
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Text(pin)
                     .font(.system(size: 46, weight: .bold, design: .rounded))
                     .tracking(8)
                     .frame(maxWidth: .infinity)
-                Text("Type this into the prompt in Settings.")
+                Text("វាយបញ្ចូលកូដនេះនៅក្នុងប្រអប់សួរនៅក្នុង Settings។")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 Button {
                     UIPasteboard.general.string = pin
                 } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
+                    Label("ចម្លង", systemImage: "doc.on.doc")
                         .font(.subheadline.weight(.semibold))
                 }
                 .buttonStyle(.bordered)
@@ -417,7 +417,7 @@ struct ContentView: View {
                     .font(.title2)
                     .foregroundStyle(.red)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Install stopped")
+                    Text("ការដំឡើងបានឈប់")
                         .font(.subheadline.weight(.semibold))
                     Text(message)
                         .font(.footnote)
@@ -473,7 +473,7 @@ extension View {
 
 /// One row of the install timeline: a status node connected by a vertical line
 /// to the next step, the step title, and a trailing badge (live percentage
-/// while installing, or an "Action needed" cue when blocked on the user).
+/// while installing, or an "ត្រូវការសកម្មភាពពីអ្នក" cue when blocked on the user).
 private struct StepRow: View {
     let step: Step
     let source: InstallSource
@@ -527,7 +527,7 @@ private struct StepRow: View {
                 .animation(.smooth(duration: 0.3), value: installProgress)
                 .transition(.opacity)
         } else if state == .waiting {
-            Text("Action needed")
+            Text("ត្រូវការសកម្មភាពពីអ្នក")
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(.orange)
                 .padding(.horizontal, 9)

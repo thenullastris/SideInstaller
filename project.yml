@@ -2,7 +2,7 @@ name: SideInstaller
 options:
   # Brand reverse-DNS prefix. NOTE: this is a chosen handle only — it is NOT
   # tied to an Apple Developer account (DEVELOPMENT_TEAM stays empty below).
-  bundleIdPrefix: com.frizzle
+  bundleIdPrefix: com.thenullastris
   deploymentTarget:
     iOS: "27.0"
   createIntermediateGroups: true
@@ -32,7 +32,7 @@ targets:
         embed: false
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.frizzle.sideinstaller
+        PRODUCT_BUNDLE_IDENTIFIER: com.thenullastris.sideinstaller
         INFOPLIST_FILE: ios-app/Info.plist
         # idevice's static lib pulls in C++ symbols (aws-lc); link libc++.
         OTHER_LDFLAGS: "-lc++"

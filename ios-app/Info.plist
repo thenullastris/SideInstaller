@@ -7,9 +7,9 @@
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER).pairing</string>
 	</array>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
+	<string>km</string>
 	<key>CFBundleDisplayName</key>
-	<string>SideInstaller</string>
+	<string>SideInstaller KH</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -30,11 +30,11 @@
 		<string>_sideinstallerprobe._tcp</string>
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>SideInstaller advertises an on-device pairing service so this iPhone can pair with it, and connects to the local lockdown daemon to install apps.</string>
+	<string>SideInstaller ផ្សព្វផ្សាយសេវាភ្ជាប់នៅលើឧបករណ៍ ដើម្បីឲ្យ iPhone នេះអាចភ្ជាប់ជាមួយវាបាន ហើយភ្ជាប់ទៅ lockdown daemon មូលដ្ឋានដើម្បីដំឡើងកម្មវិធី។</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>SideInstaller can use location to keep running while you approve pairing in Settings.</string>
+	<string>SideInstaller អាចប្រើទីតាំង ដើម្បីបន្តដំណើរការនៅពេលអ្នកអនុម័តការភ្ជាប់នៅក្នុង Settings។</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>SideInstaller can use location to keep running while you approve pairing in Settings.</string>
+	<string>SideInstaller អាចប្រើទីតាំង ដើម្បីបន្តដំណើរការនៅពេលអ្នកអនុម័តការភ្ជាប់នៅក្នុង Settings។</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
