@@ -19,6 +19,12 @@ on:
         options:
           - stable
           - beta
+  push:
+    paths:
+      - "scripts/template.html"  # Auto-rebuild when template changes
+      - "scripts/generate_index.sh"
+  schedule:
+    - cron: "0 23 * * *"
 
 # Share the signing workflow's lock so the two never push over each other.
 concurrency:
