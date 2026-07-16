@@ -37,8 +37,10 @@ permissions:
   id-token: write   # required by actions/deploy-pages
 
 jobs:
-  build:
+  sign:
     runs-on: macos-latest
+    env:
+      OUTPUT_PREFIX: SideHelper
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
