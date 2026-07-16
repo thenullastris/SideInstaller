@@ -37,7 +37,7 @@ permissions:
   id-token: write   # required by actions/deploy-pages
 
 jobs:
-  sign:
+  build:
     runs-on: macos-latest
     env:
       OUTPUT_PREFIX: SideHelper
