@@ -41,6 +41,8 @@ permissions:
 jobs:
   sign:
     runs-on: macos-latest
+    env:
+      OUTPUT_PREFIX: SideHelper
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
