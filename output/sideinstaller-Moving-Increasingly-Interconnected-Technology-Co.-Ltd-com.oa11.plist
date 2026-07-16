@@ -19,11 +19,11 @@
         <key>bundle-identifier</key>
         <string>com.shenmapower.mobileoadd</string>
         <key>bundle-version</key>
-        <string>0.6.1</string>
+        <string>0.5.0</string>
         <key>kind</key>
         <string>software</string>
         <key>title</key>
-        <string>SideInstaller</string>
+        <string>SideHelper</string>
       </dict>
     </dict>
   </array>
